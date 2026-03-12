@@ -31,7 +31,7 @@ def network_inf_KNN_glap(network, gamma=0.01, kn=11, verbose=True, **save_args):
     L_inv_arr = np.linalg.inv(L_vandin)
     L_inv = pd.DataFrame(L_inv_arr, index = network_nodes, columns = network_nodes)
     if verbose:
-        print 'Graph influence matrix calculated:', time.time()-glap_inv_starttime, 'seconds'
+        print('Graph influence matrix calculated:', time.time()-glap_inv_starttime, 'seconds')
     KNN_starttime = time.time()
     # Construct KNN graph using the 11 nearest neighbors by influence score (glap_pinv)
     # The code may include each gene's self as the 'nearest' neighbor
@@ -39,9 +39,9 @@ def network_inf_KNN_glap(network, gamma=0.01, kn=11, verbose=True, **save_args):
     # We only draw edges where the influence is > 0 between nodes
     KNN_graph = nx.Graph()
     for gene in L_inv.index:
-        gene_knn = L_inv.ix[gene].sort_values(ascending=False)[:kn].index
+        gene_knn = L_inv.loc[gene].sort_values(ascending=False)[:kn].index
         for neighbor in gene_knn:
-            if L_inv.ix[gene][neighbor] > 0:
+            if L_inv.loc[gene, neighbor] > 0:
                 KNN_graph.add_edge(gene, neighbor)
     KNN_nodes = list(KNN_graph.nodes)
     # Calculate KNN graph laplacian
@@ -55,23 +55,23 @@ def network_inf_KNN_glap(network, gamma=0.01, kn=11, verbose=True, **save_args):
             save_path = save_args['outdir']+'knnGlap.csv'
         knnGlap.to_csv(save_path)
     if verbose:
-        print 'Graph laplacian of KNN network from influence matrix calculated:', time.time()-KNN_starttime, 'seconds'    
+        print('Graph laplacian of KNN network from influence matrix calculated:', time.time()-KNN_starttime, 'seconds')
     return knnGlap
 
 # Function to sub-sample binary somatic mutation profile data frame in context of a given network
 # If no network (propNet) is given, all genes are sub-sampled
 # Key is that filtering for min mutation count happens before filtering by network nodes not after
-def subsample_sm_mat(sm_mat, propNet=None, pats_subsample_p=0.8, gene_subsample_p=0.8, min_muts=10):          
+def subsample_sm_mat(sm_mat, propNet=None, pats_subsample_p=0.8, gene_subsample_p=0.8, min_muts=10):
     # Number of indiv/features for sampling
     (Nind, Dfeat) = sm_mat.shape
     Nsample = round(Nind*pats_subsample_p)
     Dsample = round(Dfeat*gene_subsample_p)
     # Sub sample patients
-    pats_subsample = random.sample(sm_mat.index, int(Nsample))
+    pats_subsample = random.sample(list(sm_mat.index), int(Nsample))
     # Sub sample genes
-    gene_subsample = random.sample(sm_mat.columns, int(Dsample))
+    gene_subsample = random.sample(list(sm_mat.columns), int(Dsample))
     # Sub sampled data mat
-    gind_sample = sm_mat.ix[pats_subsample][gene_subsample]
+    gind_sample = sm_mat.loc[pats_subsample, gene_subsample]
     # Filter by mutation count
     gind_sample = gind_sample[gind_sample.sum(axis=1) > min_muts]
     # Filter columns by network nodes only if network is given
@@ -80,7 +80,7 @@ def subsample_sm_mat(sm_mat, propNet=None, pats_subsample_p=0.8, gene_subsample_
         # If there is no intersection, throw an error, gene names are not matched
         if len(set(list(propNet.nodes)).intersection(set(sm_mat.columns)))==0:
             raise ValueError('No mutations found in network nodes. Gene names may be mismatched.')
-        gind_sample_filt = gind_sample.T.ix[list(propNet.nodes)].fillna(0).T
+        gind_sample_filt = gind_sample.T.loc[list(propNet.nodes)].fillna(0).T
     else:
         gind_sample_filt = gind_sample
     return gind_sample_filt
@@ -119,7 +119,7 @@ def qnorm(data):
 #   err_delta_tol = Maximum change in reconstruction error allowed for break
 #   maxiter = Maximum number of iterations to execute before break
 # verbose = print statements on update progress
-def mixed_netNMF(data, KNN_glap, k=3, l=200, maxiter=250, 
+def mixed_netNMF(data, KNN_glap, k=3, l=200, maxiter=250,
     eps=1e-15, err_tol=1e-4, err_delta_tol=1e-8, verbose=False):
     # Initialize H and W Matrices from data array if not given
     r, c = data.shape[0], data.shape[1]
@@ -127,21 +127,21 @@ def mixed_netNMF(data, KNN_glap, k=3, l=200, maxiter=250,
     H_init = np.random.rand(k,c)
     H = np.maximum(H_init, eps)
     # Initialize W
-    W_init = np.linalg.lstsq(H.T, data.T)[0].T
+    W_init = np.linalg.lstsq(H.T, data.T, rcond=None)[0].T
     W_init = np.dot(W_init, np.diag(1/sum(W_init)))
     W = np.maximum(W_init, eps)
-    
+
     if verbose:
-        print 'W and H matrices initialized'
-    
+        print('W and H matrices initialized')
+
     # Get graph matrices from laplacian array
     D = np.diag(np.diag(KNN_glap)).astype(float)
     A = (D-KNN_glap).astype(float)
     if verbose:
-        print 'D and A matrices calculated'
+        print('D and A matrices calculated')
     # Set mixed netNMF reconstruction error convergence factor
     XfitPrevious = np.inf
-    
+
     # Updating W and H
     for i in range(maxiter):
         XfitThis = np.dot(W, H)
@@ -156,13 +156,13 @@ def mixed_netNMF(data, KNN_glap, k=3, l=200, maxiter=250,
 
         # Reporting netNMF update status
         if (verbose) & (i%10==0):
-            print 'Iteration >>', i, 'Mat-res:', WHres, 'Lambda:', l, 'Wfrob:', np.linalg.norm(W)
+            print('Iteration >>', i, 'Mat-res:', WHres, 'Lambda:', l, 'Wfrob:', np.linalg.norm(W))
         if (err_delta_tol > fitRes) | (err_tol > WHres) | (i+1 == maxiter):
             if verbose:
-                print 'NMF completed!'
-                print 'Total iterations:', i+1
-                print 'Final Reconstruction Error:', WHres
-                print 'Final Reconstruction Error Delta:', fitRes
+                print('NMF completed!')
+                print('Total iterations:', i+1)
+                print('Final Reconstruction Error:', WHres)
+                print('Final Reconstruction Error Delta:', fitRes)
             numIter = i+1
             finalResidual = WHres
             break
@@ -176,17 +176,17 @@ def mixed_netNMF(data, KNN_glap, k=3, l=200, maxiter=250,
         # be changed by the user if so desired.
 
         # Terms to be scaled by regularization constant: l
-        KWmat_D = np.dot(D,W) 
+        KWmat_D = np.dot(D,W)
         KWmat_W = np.dot(A,W)
-            
+
         # Update W with network constraint
         W = W*((np.dot(data, H.T) + l*KWmat_W + eps) / (np.dot(W,np.dot(H,H.T)) + l*KWmat_D + eps))
         W = np.maximum(W, eps)
         # Normalize W across each gene (row-wise)
-        W = W/matlib.repmat(np.maximum(sum(W),eps),len(W),1);        
-        
+        W = W/matlib.repmat(np.maximum(sum(W),eps),len(W),1)
+
         # Update H
-        H = np.array([nnls(W, data[:,j])[0] for j in range(c)]).T 
+        H = np.array([nnls(W, data[:,j])[0] for j in range(c)]).T
         # ^ Hofree uses a custom fast non-negative least squares solver here, we will use scipy's implementation here
         H=np.maximum(H,eps)
 
@@ -197,7 +197,7 @@ def mixed_netNMF(data, KNN_glap, k=3, l=200, maxiter=250,
 # W_init = Optional nitial W array (features-by-k)
 # This version of mixed_netNMF returns additional lists of each intermediate netNMF update step
 # as well as internal statistics of the netNMF updates at each update step
-def mixed_netNMF_debug(data, KNN_glap, W_init=None, H_init=None, k=3, l=200, maxiter=250, 
+def mixed_netNMF_debug(data, KNN_glap, W_init=None, H_init=None, k=3, l=200, maxiter=250,
     eps=1e-15, err_tol=1e-4, err_delta_tol=1e-8, verbose=False):
     # Initialize H and W Matrices from data array if not given
     r, c = data.shape[0], data.shape[1]
@@ -213,7 +213,7 @@ def mixed_netNMF_debug(data, KNN_glap, W_init=None, H_init=None, k=3, l=200, max
             raise ValueError('H_init dimensions must be '+repr(k)+' x '+repr(c))
     # Initialize W
     if W_init is None:
-        W_init = np.linalg.lstsq(H.T, data.T)[0].T
+        W_init = np.linalg.lstsq(H.T, data.T, rcond=None)[0].T
         W_init = np.dot(W_init, np.diag(1/sum(W_init)))
         W = np.maximum(W_init, eps)
     else:
@@ -223,20 +223,20 @@ def mixed_netNMF_debug(data, KNN_glap, W_init=None, H_init=None, k=3, l=200, max
         else:
             raise ValueError('W_init dimensions must be '+repr(k)+' x '+repr(c))
     if verbose:
-        print 'W and H matrices initialized'
-    
+        print('W and H matrices initialized')
+
     # Get graph matrices from laplacian array
     D = np.diag(np.diag(KNN_glap)).astype(float)
     A = (D-KNN_glap).astype(float)
     if verbose:
-        print 'D and A matrices calculated'
+        print('D and A matrices calculated')
     # Set mixed netNMF reporting variables
     resVal, fitResVect, timestep, Wlist, Hlist = [], [], [], [], []
     XfitPrevious = np.inf
-    
+
     # Updating W and H
     for i in range(maxiter):
-    	iter_time = time.time()
+        iter_time = time.time()
         XfitThis = np.dot(W, H)
         WHres = np.linalg.norm(data-XfitThis) # Reconstruction error
 
@@ -252,13 +252,13 @@ def mixed_netNMF_debug(data, KNN_glap, W_init=None, H_init=None, k=3, l=200, max
         Wlist.append(W)
         Hlist.append(H)
         if (verbose) & (i%10==0):
-            print 'Iteration >>', i, 'Mat-res:', WHres, 'Gamma:', l, 'Wfrob:', np.linalg.norm(W)
+            print('Iteration >>', i, 'Mat-res:', WHres, 'Gamma:', l, 'Wfrob:', np.linalg.norm(W))
         if (err_delta_tol > fitRes) | (err_tol > WHres) | (i+1 == maxiter):
             if verbose:
-                print 'NMF completed!'
-                print 'Total iterations:', i+1
-                print 'Final Reconstruction Error:', WHres
-                print 'Final Reconstruction Error Delta:', fitRes
+                print('NMF completed!')
+                print('Total iterations:', i+1)
+                print('Final Reconstruction Error:', WHres)
+                print('Final Reconstruction Error Delta:', fitRes)
             numIter = i+1
             finalResidual = WHres
             break
@@ -272,20 +272,20 @@ def mixed_netNMF_debug(data, KNN_glap, W_init=None, H_init=None, k=3, l=200, max
         # be changed by the user if so desired.
 
         # Terms to be scaled by regularization constant: l
-        KWmat_D = np.dot(D,W) 
+        KWmat_D = np.dot(D,W)
         KWmat_W = np.dot(A,W)
-            
+
         # Update W with network constraint
         W = W*((np.dot(data, H.T) + l*KWmat_W + eps) / (np.dot(W,np.dot(H,H.T)) + l*KWmat_D + eps))
         W = np.maximum(W, eps)
-        W = W/matlib.repmat(np.maximum(sum(W),eps),len(W),1);        
-        
+        W = W/matlib.repmat(np.maximum(sum(W),eps),len(W),1)
+
         # Update H
-        H = np.array([nnls(W, data[:,j])[0] for j in range(c)]).T 
+        H = np.array([nnls(W, data[:,j])[0] for j in range(c)]).T
         # ^ Hofree uses a custom fast non-negative least squares solver here, we will use scipy's implementation here
         H=np.maximum(H,eps)
 
-       	# Track each iterations' time step
+        # Track each iterations' time step
         timestep.append(time.time()-iter_time)
-    
+
     return W, H, numIter, finalResidual, resVal, fitResVect, Wlist, Hlist, timestep

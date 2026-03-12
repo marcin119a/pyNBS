@@ -40,7 +40,7 @@ def NBS_single(sm_mat, regNet_glap, propNet=None, propNet_kernel=None,
     sm_mat_subsample = core.subsample_sm_mat(sm_mat, propNet=propNet, 
         pats_subsample_p=pats_subsample_p, gene_subsample_p=gene_subsample_p, min_muts=min_muts)
     if verbose:
-        print 'Somatic mutation data sub-sampling complete'
+        print('Somatic mutation data sub-sampling complete')
 
     # Throw exception if subsampling returned empty dataframe
     if sm_mat_subsample.shape[0]==0:
@@ -74,11 +74,11 @@ def NBS_single(sm_mat, regNet_glap, propNet=None, propNet_kernel=None,
             else:
                 prop_sm_data = prop.network_kernel_propagation(propNet, propNet_kernel, sm_mat_subsample)
         if verbose:
-            print 'Somatic mutation data propagated'
+            print('Somatic mutation data propagated')
     else:
         prop_sm_data = sm_mat_subsample
         if verbose:
-          print 'Somatic mutation data not propagated'
+          print('Somatic mutation data not propagated')
 
     # Quantile Normalize Data
     qnorm_data = True
@@ -87,20 +87,20 @@ def NBS_single(sm_mat, regNet_glap, propNet=None, propNet_kernel=None,
     if qnorm_data:
         prop_data_qnorm = core.qnorm(prop_sm_data)
         if verbose:
-            print 'Somatic mutation data quantile normalized'
+            print('Somatic mutation data quantile normalized')
     else:
         prop_data_qnorm = prop_sm_data
         if verbose:
-          print 'Somatic mutation data not quantile normalized'
+          print('Somatic mutation data not quantile normalized')
 
     # Prepare data for mixed netNMF function (align propagated profile columns with regularization network laplacian rows)
     if propNet is not None:
         propNet_nodes = list(propNet.nodes)
-        data_arr = np.array(prop_data_qnorm.T.ix[propNet_nodes])
-        regNet_glap_arr = np.array(regNet_glap.ix[propNet_nodes][propNet_nodes])
+        data_arr = np.array(prop_data_qnorm.T.loc[propNet_nodes])
+        regNet_glap_arr = np.array(regNet_glap.loc[propNet_nodes, propNet_nodes])
     else:
         propNet_nodes = list(regNet_glap.index)
-        data_arr = np.array(prop_data_qnorm.T.ix[propNet_nodes].fillna(0))
+        data_arr = np.array(prop_data_qnorm.T.loc[propNet_nodes].fillna(0))
         regNet_glap_arr = np.array(regNet_glap)
 
     # Set netNMF parameters from kwargs if given, otherwise use defaults
@@ -140,9 +140,9 @@ def NBS_single(sm_mat, regNet_glap, propNet=None, propNet_kernel=None,
                 save_path = kwargs['outdir']+'H.csv'
         H_df.to_csv(save_path)
         if verbose:
-            print 'H matrix saved:', save_path
+            print('H matrix saved:', save_path)
     else:
         pass
     if verbose:
-        print 'pyNBS iteration complete'
+        print('pyNBS iteration complete')
     return H_df

@@ -20,16 +20,19 @@ setup(
 		'Intended Audience :: Science/Research',
 		'Topic :: Software Development :: Build Tools',
 		'License :: OSI Approved :: MIT License',
-		'Programming Language :: Python :: 2.7'
+		'Programming Language :: Python :: 3',
+		'Programming Language :: Python :: 3 :: Only'
 	],
+	python_requires='>=3.6',
 	packages=find_packages(exclude=['os', 'random', 'time']),
 	install_requires=[
-        'lifelines>=0.9.1',
-        'networkx>=2.0',
-        'numpy>=1.11.0',
-        'matplotlib>=1.5.1',
-        'pandas>=0.19.0',
-        'scipy>=0.17.0',
-        'scikit-learn>=0.17.1',
-        'seaborn>=0.7.1']
+		'lifelines>=0.27.0',
+		'networkx>=2.0',
+		'numpy>=1.18.0',
+		'matplotlib>=3.0.0',
+		'pandas>=1.0.0',
+		'scipy>=1.4.0',
+		'scikit-learn>=0.22.0',
+		'seaborn>=0.10.0',
+		'requests>=2.20.0']
 )

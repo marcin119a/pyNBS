@@ -26,7 +26,7 @@ def consensus_hclust_hard(Hlist, k=3, hclust_linkage_method='average',
         pat_list = pat_list.union(set(H.index))
     pat_list = sorted(list(pat_list))
     if verbose:
-        print 'Constructing Hlist:', len(Hlist), 'cluster matrices, ', len(pat_list), 'samples'
+        print('Constructing Hlist:', len(Hlist), 'cluster matrices, ', len(pat_list), 'samples')
 
     # Initialzie co-clustering tables
     co_clust_table = pd.DataFrame(0, index=pat_list, columns=pat_list)
@@ -36,15 +36,15 @@ def consensus_hclust_hard(Hlist, k=3, hclust_linkage_method='average',
     for H in Hlist:
         H.columns = range(1,len(H.columns)+1)
         # Update patient cluster count
-        cluster_count.ix[H.index, H.index]+=1
+        cluster_count.loc[H.index, H.index]+=1
         # Get cluster assignment for each patient
         cluster_assign = {i:[] for i in H.columns}
         for pat in H.index:
-            cluster_assign[np.argmax(H.ix[pat])].append(pat)
+            cluster_assign[np.argmax(H.loc[pat])].append(pat)
         # Update co-clustering matrix with each cluster assignment
         for cluster in cluster_assign:
             cluster_pats = cluster_assign[cluster]
-            co_clust_table.ix[cluster_pats, cluster_pats]+=1
+            co_clust_table.loc[cluster_pats, cluster_pats]+=1
     cc_hard_sim_table = co_clust_table.astype(float).divide(cluster_count.astype(float)).fillna(0)
     cc_hard_dist_table = 1-cc_hard_sim_table
     Z = hclust.linkage(dist.squareform(np.array(cc_hard_dist_table)), method=hclust_linkage_method, metric=hclust_linkage_metric)
@@ -61,7 +61,7 @@ def consensus_hclust_hard(Hlist, k=3, hclust_linkage_method='average',
         cc_hard_sim_table.to_csv(save_cc_matrix_path)
         cluster_assign.to_csv(save_clusters_path)
     if verbose:
-        print 'Hlist consensus constructed and sample clusters assigned'
+        print('Hlist consensus constructed and sample clusters assigned')
     return cc_hard_sim_table, Z, cluster_assign
 
 # Constructs Hlist object for consensus clustering functions if NBS iterations were run in parallel and outputs saved to a folder

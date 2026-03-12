@@ -17,7 +17,7 @@ def cluster_color_assign(cluster_assignments, name=None):
     cluster_cmap = {i:colors[i-1] for i in range(1, k+1)}
     pat_colors = {}
     for pat in cluster_assignments.index:
-        pat_colors[pat] = cluster_cmap[cluster_assignments.ix[pat]]
+        pat_colors[pat] = cluster_cmap[cluster_assignments.loc[pat]]
     cluster_cmap = pd.Series(pat_colors, name=name)
     return cluster_cmap
 
@@ -50,7 +50,7 @@ def plot_cc_map(cc_table, linkage, row_color_map=None, col_color_map=None, verbo
         plt.savefig(save_cc_map_path, bbox_inches='tight')
         plt.show()
     if verbose:
-        print 'Co-Clustering Map plotted'
+        print('Co-Clustering Map plotted')
     return
 
 # Function for plotting Kaplan Meier plot of cluster survivals
@@ -78,7 +78,7 @@ def cluster_KMplot(cluster_assign, clin_data_fn, delimiter='\t', lr_test=True, t
     # Plot each cluster onto KM Plot
     for clust in clusters:
         clust_pats = list(cluster_assign[cluster_assign==clust].index)
-        clust_surv_data = surv.ix[clust_pats].dropna()
+        clust_surv_data = surv.loc[clust_pats].dropna()
         kmf.fit(clust_surv_data.overall_survival, clust_surv_data.vital_status, label='Group '+str(clust)+' (n=' +  str(len(clust_surv_data)) + ')')
         kmf.plot(ax=ax, color=cluster_cmap[clust], ci_show=False)
     # Set KM plot limits to 5 years and labels
@@ -93,7 +93,7 @@ def cluster_KMplot(cluster_assign, clin_data_fn, delimiter='\t', lr_test=True, t
                            np.array(cluster_survivals[cluster_assign.name]), t_0=tmax,
                            event_observed=np.array(cluster_survivals.vital_status)).p_value
         if verbose:
-            print 'Multi-Class Log-Rank P:', p
+            print('Multi-Class Log-Rank P:', p)
         plt.title(title+'\np='+repr(round(p, 4)), fontsize=24, y=1.02)
     else:
         plt.title(title, fontsize=24, y=1.02)
@@ -106,7 +106,7 @@ def cluster_KMplot(cluster_assign, clin_data_fn, delimiter='\t', lr_test=True, t
         plt.savefig(save_KMplot_path, bbox_inches='tight')
         plt.show()
     if verbose:
-        print 'Kaplan Meier Plot constructed'
+        print('Kaplan Meier Plot constructed')
     if lr_test:
         return p
     else:
