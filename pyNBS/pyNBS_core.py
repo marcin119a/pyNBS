@@ -80,7 +80,7 @@ def subsample_sm_mat(sm_mat, propNet=None, pats_subsample_p=0.8, gene_subsample_
         # If there is no intersection, throw an error, gene names are not matched
         if len(set(list(propNet.nodes)).intersection(set(sm_mat.columns)))==0:
             raise ValueError('No mutations found in network nodes. Gene names may be mismatched.')
-        gind_sample_filt = gind_sample.T.loc[list(propNet.nodes)].fillna(0).T
+        gind_sample_filt = gind_sample.T.reindex(list(propNet.nodes)).fillna(0).T
     else:
         gind_sample_filt = gind_sample
     return gind_sample_filt
