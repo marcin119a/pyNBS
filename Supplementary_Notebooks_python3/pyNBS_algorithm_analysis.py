@@ -30,7 +30,7 @@ if not os.path.exists(outdir):
     os.makedirs(outdir)
 
 alpha = 0.7
-clusters, niter = 4, 100
+clusters, niter = 4, 1
 
 
 # ─── Helper: cluster comparison ───────────────────────────────────────────────
@@ -63,7 +63,9 @@ def compare_clusters(base_assign, new_assign, clusters):
     )
     print(cont_table)
 
-    chi_sq_test = stats.chi2_contingency(NBS_cont_table_array, correction=False)
+    # Drop all-zero rows/columns to avoid chi2_contingency failure on zero expected frequencies
+    cont_table_filtered = cont_table.loc[cont_table.sum(axis=1) > 0, cont_table.sum(axis=0) > 0]
+    chi_sq_test = stats.chi2_contingency(cont_table_filtered.values, correction=False)
     print('Chi-Squared Statistic:', chi_sq_test[0])
     print('Chi-Squared P-Value:', chi_sq_test[1])
 

@@ -100,7 +100,7 @@ def NBS_single(sm_mat, regNet_glap, propNet=None, propNet_kernel=None,
         regNet_glap_arr = np.array(regNet_glap.loc[propNet_nodes, propNet_nodes])
     else:
         propNet_nodes = list(regNet_glap.index)
-        data_arr = np.array(prop_data_qnorm.T.loc[propNet_nodes].fillna(0))
+        data_arr = np.array(prop_data_qnorm.T.reindex(propNet_nodes).fillna(0))
         regNet_glap_arr = np.array(regNet_glap)
 
     # Set netNMF parameters from kwargs if given, otherwise use defaults
