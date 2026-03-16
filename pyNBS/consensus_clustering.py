@@ -40,7 +40,7 @@ def consensus_hclust_hard(Hlist, k=3, hclust_linkage_method='average',
         # Get cluster assignment for each patient
         cluster_assign = {i:[] for i in H.columns}
         for pat in H.index:
-            cluster_assign[np.argmax(H.loc[pat])].append(pat)
+            cluster_assign[H.loc[pat].idxmax()].append(pat)
         # Update co-clustering matrix with each cluster assignment
         for cluster in cluster_assign:
             cluster_pats = cluster_assign[cluster]
