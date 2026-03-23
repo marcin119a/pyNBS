@@ -49,7 +49,8 @@ def network_propagation(network, binary_matrix, alpha=0.7, symmetric_norm=False,
     subgraph = subgraphs[0]
     subgraph_nodes = list(subgraph.nodes)
     prop_data_node_order = list(subgraph_nodes)
-    binary_matrix_filt = np.array(binary_matrix.T.loc[subgraph_nodes].fillna(0).T)
+    # Use reindex so missing genes default to 0 rather than raising KeyError.
+    binary_matrix_filt = np.array(binary_matrix.T.reindex(subgraph_nodes).fillna(0).T)
     subgraph_norm = normalize_network(subgraph, symmetric_norm=symmetric_norm)
     prop_data_empty = np.zeros((binary_matrix_filt.shape[0], 1))
     prop_data = fast_random_walk(alpha, binary_matrix_filt, subgraph_norm, prop_data_empty)
@@ -57,7 +58,8 @@ def network_propagation(network, binary_matrix, alpha=0.7, symmetric_norm=False,
     for subgraph in subgraphs[1:]:
         subgraph_nodes = list(subgraph.nodes)
         prop_data_node_order = prop_data_node_order + subgraph_nodes
-        binary_matrix_filt = np.array(binary_matrix.T.loc[subgraph_nodes].fillna(0).T)
+        # Use reindex so missing genes default to 0 rather than raising KeyError.
+        binary_matrix_filt = np.array(binary_matrix.T.reindex(subgraph_nodes).fillna(0).T)
         subgraph_norm = normalize_network(subgraph, symmetric_norm=symmetric_norm)
         prop_data = fast_random_walk(alpha, binary_matrix_filt, subgraph_norm, prop_data)
     # Return propagated result as dataframe
@@ -94,13 +96,13 @@ def network_kernel_propagation(network, network_kernel, binary_matrix, verbose=F
     subgraph_nodelists = list(nx.connected_components(network))
     # Initialize propagation results by propagating first subgraph
     prop_nodelist = list(subgraph_nodelists[0])
-    prop_data = np.dot(binary_matrix.T.loc[prop_nodelist].fillna(0).T,
+    prop_data = np.dot(binary_matrix.T.reindex(prop_nodelist).fillna(0).T,
                        network_kernel.loc[prop_nodelist, prop_nodelist])
     # Get propagated results for remaining subgraphs
     for nodelist in subgraph_nodelists[1:]:
         subgraph_nodes = list(nodelist)
         prop_nodelist = prop_nodelist + subgraph_nodes
-        subgraph_prop_data = np.dot(binary_matrix.T.loc[subgraph_nodes].fillna(0).T,
+        subgraph_prop_data = np.dot(binary_matrix.T.reindex(subgraph_nodes).fillna(0).T,
                                     network_kernel.loc[subgraph_nodes, subgraph_nodes])
         prop_data = np.concatenate((prop_data, subgraph_prop_data), axis=1)
     # Return propagated result as dataframe
